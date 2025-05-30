@@ -1,136 +1,104 @@
-# Rails 8 Multitenancy Boilerplate
+Claro, aquí tienes un `README.md` completo y bien estructurado para tu proyecto **ABTZone**, ideal para publicar en GitHub:
 
-### Core features
+---
 
-- ✅ Registrations & Authentication (Devise + Devise invitable, but is quite easy to switch)
-- ✅ Create Organizations (aka Teams, Accounts, Workspaces, Tenants)
-- ✅ Invite Users to Organization & assign role (admin, member).
-- ✅ Organization admin can manage organization & members
-- ✅ Authorization
-- ✅ Complete test coverage
-- ✅ Basic UI design
-- ✅ Nested scaffold generators for fast development (/organizations/projects)
+````markdown
+# 🏛️ ABTZone - Sistema Multitenant en Ruby on Rails con Docker
 
-![Moneygun features](https://i.imgur.com/QUmTexS.png)
+ABTZone es un sistema multiorganización diseñado bajo arquitectura **multitenant** y desplegado localmente mediante contenedores Docker. Permite gestionar organizaciones, usuarios y bandejas internas, manteniendo una lógica de aislamiento y control de acceso.
 
-### About Row-level route-based multitenancy in Ruby on Rails
+## 🚀 Tecnologías utilizadas
 
-[Teams should be an MVP feature!](https://blog.bullettrain.co/teams-should-be-an-mvp-feature/)
+- **Ruby on Rails 8.0**
+- **PostgreSQL**
+- **Docker y Docker Compose**
+- **WSL2 (Ubuntu) en Windows 11**
+- **Apache Benchmark (ab)** para pruebas de carga
+- Autenticación Devise + Políticas de autorización Pundit
 
-[Watch Screencast](https://www.youtube.com/watch?v=KMonLTvWR5g):
-<a href="https://www.youtube.com/watch?v=KMonLTvWR5g"><img src="https://i3.ytimg.com/vi/KMonLTvWR5g/maxresdefault.jpg" title="Row-level route-based multitenancy in Ruby on Rails" width="50%" /><a>
+## 📦 Estructura del sistema
 
-### Why route-based multitenancy?
+- **Superadmin**: Visualiza y administra todas las organizaciones y usuarios.
+- **Organizaciones (tenants)**: Separación lógica por `organization_id`.
+- **Usuarios**: Pueden ser _administradores_ o _miembros_ dentro de una organización.
+- **Bandejas**: Área interna de mensajes o tareas personalizadas por organización.
 
-- ✅ Easy to switch between organizations
-- ✅ Keep multiple organizations open in different tabs
-- ✅ No hassle configuring subdomains
+## 🛠️ Instalación local
 
-### Why deep nested routes?
+### 1. Clonar el repositorio
 
-Yes, this can generate an "long" url like `/organizations/344/projects/4532/tasks/24342342/edit`, but it preserves the logical **hierarchy**.
+```bash
+git clone https://github.com/tuusuario/abtzone.git
+cd abtzone
+````
 
-```ruby
-resources :organizations do
-  resources :memberships
-  resources :projects do
-    resources :tasks do
-    end
-  end
-end
+### 2. Crear los contenedores
+
+#### PostgreSQL
+
+```bash
+docker run -d \
+  --name postgres-container \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=Rootalex* \
+  -e POSTGRES_DB=myapp_development \
+  -p 5432:5432 \
+  postgres:latest
 ```
 
-I [tried using `OrganizationMiddlewhare`](https://github.com/yshmarov/askvote/pull/24/files#diff-44009a2f9efdafcc7cd44e1cb5e03151a74aa760c54af5c16e2cc7095ff3b0ffR7) like JumpstartPro does, but it felt too much of an  **unconventional** approach.
+#### Ruby on Rails
 
-### Design inspiration
-
-- trello
-- discord
-- slack
-- https://circle.so/
-
-For example in Trello, you can have 2 unrelated boards open in 2 tabs.
-
-## Development
-
-### Getting started
-
-1. Clone the template repository:
-```
-git clone git@github.com:yshmarov/moneygun.git your_new_project_name
+```bash
+docker run -it -d --name rails-container \
+  --link postgres-container:db \
+  -v $(pwd):/app -w /app \
+  -p 3000:3000 ruby:latest bash
 ```
 
-2. Enter the project directory:
-```
-cd your_new_project_name
-```
+### 3. Configurar entorno
 
-3. Run the configuration and setup scripts:
-```
+Dentro del contenedor `rails-container`, instalar dependencias:
+
+```bash
+gem install rails -v 8.0
 bundle install
 rails db:create db:migrate
 ```
 
-4. Start your application:
-```
-bin/dev
-```
+### 4. Ejecutar la aplicación
 
-### Resource assignments and references should be to Membership and not User!
-
-🚫 Bad
-
-```ruby
-# models/project.rb
-  belongs_to :organization
-  belongs_to :user
+```bash
+rails server -b 0.0.0.0
 ```
 
-✅ Good
+Accede desde tu navegador en:
+👉 [http://localhost:3000](http://localhost:3000)
 
-```ruby
-# models/project.rb
-  belongs_to :organization
-  belongs_to :membership
-```
+## ✅ Funcionalidades implementadas
 
-I recommend scoping downstream models to `organization` too. This way you can query them more easily.
+* Registro y autenticación de usuarios
+* Creación y gestión de organizaciones
+* Asignación de roles por organización
+* Control de acceso con políticas
+* Bandejas por tenant
+* Dashboard del superadmin
+* Edición de datos y recuperación de contraseña
 
-```ruby
-# models/task.rb
-  belongs_to :organization # <- THIS
-  belongs_to :project
-```
+## 📊 Resultados y rendimiento
 
-### Generators
+* 15.98 solicitudes por segundo (Apache Benchmark)
+* Tiempo promedio por solicitud: **62.58 ms**
+* Pruebas funcionales y de aislamiento exitosas
+* Arquitectura modular sin errores de arranque
 
-`Inbox` is an example of a well-integrated **resource** scoped to an `organization`. With pundit authorization and tests. Use it as an inspiration.
+## 🔐 Seguridad y privacidad
 
-To quickly generate nested resources you can use [gem nested_scaffold](https://github.com/yshmarov/nested_scaffold)
+* Implementación de roles y políticas de acceso
+* Aislamiento lógico mediante `organization_id`
+* Cumplimiento básico de términos y política de privacidad local
 
-```
-rails generate nested_scaffold organization/project name
-```
+## 📁 Licencia
 
-Generate a pundit policy:
+Este proyecto se desarrolla como parte del curso de Ingeniería de Software - Universidad Católica de Colombia. Uso académico.
 
-```
-rails g pundit:policy project
-```
-
-### Testing & linting
-
-I did not focus on system tests, because the frontend can evolve a lot.
-
-There are quite a lot of tests covering authentication, authorization, and multitenancy.
-
-```shell
-# run all tests
-rails test:all
-bundle exec erb_lint --lint-all -a
-bundle exec rubocop -A
-```
-
-### Contributing
-
-Feel free to raise an Issue or open a Pull Request!
+---
